@@ -1,7 +1,6 @@
 # Improving the matching of deformable objects by learning to detect keypoints
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE) [![arXiv](https://img.shields.io/badge/arXiv-1234.56789-b31b1b.svg)](https://arxiv.org/abs/2309.00434)
-
-<!--[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/DALF_CVPR_2023/blob/main/notebooks/registration_with_DALF.ipynb)-->
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/LearningToDetect_PRL_2023/blob/main/notebook/sample.ipynb)
 
 <div align="center">
 <img src='./assets/notredame.jpg' align="center" width="200"/> 
