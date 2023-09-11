@@ -17,7 +17,7 @@ def parseArg():
     return args
 
 # main
-def main():
+if __name__ == "__main__":
     global args
     args = parseArg()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,20 +33,17 @@ def main():
 
     print(f"Img shape: {img.shape}")
 
-    score_map, keypoints, descs = detector.detect(img, 1024)
+    keypoints, score_map = detector.detect(img, 1024)
     
     print("Number of keypoints: ", len(keypoints))
 
     # plot keypoints
     for kp in keypoints:
-        cv2.circle(og_img, (int(kp[0]), int(kp[1])), 3, (255, 0, 0), -1)
+        cv2.circle(og_img, (int(kp[0]), int(kp[1])), 6, (0, 0, 255), -1)
     
     cv2.imwrite("output.png", og_img)
 
     np.save('s_map.npy', score_map)
     np.save('kps.npy', keypoints)
-    np.save('descs.npy', descs)
 
     print("Done!")
-
-main()

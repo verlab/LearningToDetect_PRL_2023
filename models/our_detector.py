@@ -4,16 +4,7 @@ import torch.nn as nn
 import os
 import sys
 import numpy as np
-import time
 from .unet_parts import *
-
-paths = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + '/../')
-if not os.path.exists(paths): 
-    raise RuntimeError('Invalid path for descriptor tools: ' + paths)
-else:
-    print("ok path:", paths)
-sys.path.insert(0, paths)
-
 
 class Our(nn.Module):
     def __init__(self, enc_channels = [1, 32, 64, 128], deformable_encoder = False, deformable_decoder = False, device=None):
@@ -27,59 +18,14 @@ class Our(nn.Module):
         else:
             self.device = device
 
-        self.aslfeat = None
-        self.net = None
-
-
     def forward(self, x):
         feats = self.encoder(x)
         out = self.decoder(feats)
       
         return out
     
-    def initASLFeat(self):
-        # disable gpu
-        last_gpu = os.environ.get("CUDA_VISIBLE_DEVICES", None)
-        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-        from models.cnn_wrapper.aslfeat import ASLFeatNet
-        self.aslfeat = ASLFeatNet(None, False)
-        self.aslfeat.init()
-
-        # enable gpu
-        if last_gpu is not None:
-            os.environ["CUDA_VISIBLE_DEVICES"] = last_gpu
-        else:
-            del os.environ["CUDA_VISIBLE_DEVICES"]
-    
-    def asl_feature_map(self, data):
-        self.aslfeat.netConfig
-        self.aslfeat.sess
-
-        h, w, _ = data.shape
-        
-        feed_dict = {"input:0": np.expand_dims(data, 0)}
-        returns = self.aslfeat.sess.run(self.aslfeat.endpoints, feed_dict=feed_dict)
-        feature_maps = returns['feature_maps']
-        descs = returns['descs'][0]
-        score_map = returns['score_map']
-
-        idx = 0
-        d = np.zeros((h, w, 128), dtype=np.float32)
-        for y in range(h):
-            for x in range(w):
-                d[y][x] = descs[idx]
-                idx+=1
-        
-        # retornando o ultimo feature map e os descritores no shape da imagem de entrada
-        feature_map = feature_maps[2]
-        return feature_map, d, score_map
-
-    def init_detector(self, model_path):
-        self.model_path = model_path
-        self.load_state_dict(torch.load(model_path, map_location = self.device))
-        self.initASLFeat()
-
     def detect(self, img, max_kps, thresould_score=0.1, extract_asl=False, return_heatmap=False, only_keypoints=False): # numpy image
+
         if len(img.shape) == 3:
             if img.shape[2] == 3:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -88,21 +34,9 @@ class Our(nn.Module):
             else:
                 raise RuntimeError("Invalid image shape: " + str(img.shape))
         
-        h, w = img.shape
-
-        if self.aslfeat == None and extract_asl:
-            print("Call init_detector function before cal detect")
-            return None, None, None
-
         img2 = np.copy(img)
         img2 = img2[..., np.newaxis]
-
-        descriptors = None
-        if extract_asl:
-            _, descriptors, score_map_asl = self.asl_feature_map(img2)
-            h, w, _ = descriptors.shape
                 
-
         imT = torch.Tensor(img).unsqueeze(0).unsqueeze(0)
 
         with torch.no_grad():
@@ -110,63 +44,7 @@ class Our(nn.Module):
 
             keypoints, selection = self.score_to_keypoints(score_map.squeeze(0).squeeze(0), max_kps)
 
-        return selection, keypoints, score_map.squeeze(0).squeeze(0).cpu().detach().numpy()
-
-        # nms
-        local_max = F.max_pool2d(score_map, 5, stride=1, padding=2)
-        is_local_max = (score_map == local_max)
-        del local_max
-        is_not_edge = self.edgeFilter(score_map)
-
-        detected = torch.min(is_local_max, is_not_edge)
-        detected = torch.squeeze(detected, 0)
-        detected = torch.squeeze(detected, 0)
-
-        score_map = torch.squeeze(score_map, 0)
-        score_map = torch.squeeze(score_map, 0)
-
-        score_map = score_map.cpu().detach().numpy()
-        detected = detected.cpu().detach().numpy()
-                
-        points = score_map * detected
-
-        filter = points > thresould_score
-        
-        selection = np.zeros_like(points)
-        selection[filter] = points[filter]
-
-        keypoints = []
-        descs = []
-        for y in range(h):
-            for x in range(w):
-                if selection[y][x] != 0:
-                    keypoints.append([x, y, selection[y][x]])
-                    if extract_asl:
-                        descs.append(descriptors[y][x])
-        
-        idxs = sorted(range(len(keypoints)), key=lambda k: keypoints[k][2], reverse=True)
-        
-        keypoints = [keypoints[i] for i in idxs]
-        if extract_asl:
-            descs = [descs[i] for i in idxs]
-        
-        keypoints = np.asarray(keypoints[: min(max_kps, len(keypoints))])
-
-        if extract_asl:
-            descs = np.asarray(descs[: min(max_kps, len(keypoints))])
-                
-        selection = np.zeros_like(selection)
-        for kp in keypoints:
-            x, y = kp[0], kp[1]
-            selection[int(y)][int(x)] = kp[2]
-
-        if only_keypoints:
-            return keypoints
-
-        if return_heatmap:
-            return selection, keypoints, descs, score_map
-    
-        return selection, keypoints, descs
+        return keypoints, score_map.squeeze(0).squeeze(0).cpu().detach().numpy()
     
     def score_to_keypoints(self, score_map, max_kps=-1, threshold_score=0.1): # numpy image      
         with torch.no_grad():
@@ -249,24 +127,3 @@ class Our(nn.Module):
 
         return is_not_edge
     
-    def nonMaxima(self, img, n=5): # n = window size
-        mid = int(n/2)
-        h, w = img.shape
-        for i in range(h-n-1):
-            a = i+n
-            for j in range(w-n-1):
-                b = j+n
-                p = img[mid+i][mid+j]
-                if p == 0:
-                    continue
-                t = False
-                for k in range(i, a):
-                    for l in range(j, b):
-                        if p < img[k][l]:
-                            img[mid+i][mid+j] = 0
-                            t = True
-                            break
-                    if t == True:
-                        break
-
-        return img

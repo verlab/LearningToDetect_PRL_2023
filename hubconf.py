@@ -9,10 +9,12 @@ def Detector(pretrained=False, **kwargs):
     pretrained (bool): kwargs, load pretrained weights into the model
     """
     # Call the model, load pretrained weights
-    model = Our(**kwargs)
 
     if pretrained:
+        model = Our(enc_channels = [1, 32, 64, 128], deformable_encoder = False, deformable_decoder = False)
         checkpoint = 'https://github.com/verlab/LearningToDetect_PRL_2023/raw/main/pretrained/our/final_model_1500.pth'
         model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint, map_location=torch.device("cpu")))
+    else:
+        model = Our(**kwargs)
 
     return model
