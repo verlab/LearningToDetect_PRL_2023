@@ -12,7 +12,7 @@ def resnet18(pretrained=False, **kwargs):
     model = Our(**kwargs)
 
     if pretrained:
-        checkpoint = ''
+        checkpoint = 'https://github.com/verlab/LearningToDetect_PRL_2023/raw/main/pretrained/our/final_model_1500.pth'
         model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint, progress=False))
 
 
