@@ -21,7 +21,7 @@ if __name__ == "__main__":
     og_img = cv2.imread(args.input)
     img = cv2.cvtColor(og_img, cv2.COLOR_BGR2GRAY)[..., np.newaxis]
 
-    detector = torch.hub.load("verlab/LearningToDetect_PRL_2023:main", "Detector", pretrained=True)
+    detector = torch.hub.load("verlab/LearningToDetect_PRL_2023:main", "Detector", pretrained=True, force_reload=True)
 
     detector.to(device)
     detector.eval()
