@@ -3,8 +3,8 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/LearningToDetect_PRL_2023/blob/main/notebook/sample.ipynb)
 
 <div align="center">
-<img src='./assets/notredame.jpg' align="center" width="200"/> 
-<img src='./assets/output.png' align="center" width="200"/> <br>
+<img src='./assets/notredame.jpg' align="center" width="400"/> 
+<img src='./assets/output.png' align="center" width="400"/> <br>
 </div>
 
 ## Table of Contents
