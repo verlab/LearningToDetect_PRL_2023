@@ -24,7 +24,7 @@ class Our(nn.Module):
       
         return out
     
-    def detect(self, img, max_kps, thresould_score=0.1, extract_asl=False, return_heatmap=False, only_keypoints=False): # numpy image
+    def detect(self, img, max_kps, threshold_score=0.1, ): # numpy image
 
         if len(img.shape) == 3:
             if img.shape[2] == 3:
@@ -41,8 +41,7 @@ class Our(nn.Module):
 
         with torch.no_grad():
             score_map = self(imT.to(self.device))
-
-            keypoints, selection = self.score_to_keypoints(score_map.squeeze(0).squeeze(0), max_kps)
+            keypoints, selection = self.score_to_keypoints(score_map.squeeze(0).squeeze(0), max_kps, threshold_score)
 
         return keypoints, score_map.squeeze(0).squeeze(0).cpu().detach().numpy()
     

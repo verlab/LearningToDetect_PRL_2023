@@ -48,8 +48,6 @@ pip install torch torchvision torchaudio
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 ```
-- [conda](https://docs.conda.io/en/latest/miniconda.html) for automatic installation;
-
 
 ## Torch Hub
 
